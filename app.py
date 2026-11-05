@@ -199,34 +199,29 @@ def cached_bundle(path: str, stamp: float):
 
 
 def find_default_csv() -> str:
-    # Use a CSV already included with the app, if one exists.
+    # Check local dataset first
     for rel in ("Cleaned_Crop_Yield.csv", "data/Cleaned_Crop_Yield.csv"):
-        candidate = APP_DIR / rel
-        if candidate.is_file() and candidate.stat().st_size > 0:
-            return str(candidate)
+        if (APP_DIR / rel).is_file():
+            return str(APP_DIR / rel)
 
-    # Otherwise, download the dataset from Google Drive.
+    # Download from Google Drive
     target = APP_DIR / "Cleaned_Crop_Yield.csv"
+
     try:
-        with st.spinner("Downloading the crop yield dataset from Google Drive…"):
+        with st.spinner("Downloading crop yield dataset from Google Drive..."):
             result = gdown.download(
                 id="1UpfLFo1t1V7QOw0cp0Yr_DIhB1Qyhv71",
                 output=str(target),
-                quiet=False,
-                fuzzy=True,
+                quiet=False
             )
 
-        if result is None or not target.is_file() or target.stat().st_size == 0:
-            raise RuntimeError("Google Drive did not return a valid CSV file.")
+        if result is None or not target.exists() or target.stat().st_size == 0:
+            raise RuntimeError("Dataset download failed.")
 
         return str(target)
+
     except Exception as exc:
-        # Leave the normal sidebar upload/path options available if download fails.
-        st.warning(
-            "The automatic Google Drive download failed. Check that the file is "
-            "shared as ‘Anyone with the link – Viewer’. You can also upload the CSV "
-            f"manually in the Data source section. Details: {exc}"
-        )
+        st.error(f"Google Drive download failed: {exc}")
         return str(target)
 
 
